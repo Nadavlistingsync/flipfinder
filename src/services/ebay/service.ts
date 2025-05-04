@@ -60,10 +60,6 @@ interface EbayApiItemSummary {
   }>;
 }
 
-interface EbayApiResponse {
-  itemSummaries: EbayApiItemSummary[];
-}
-
 interface EbayApiShippingOption {
   shippingCost: {
     value: string;
