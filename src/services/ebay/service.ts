@@ -72,10 +72,7 @@ export const searchItems = async (params: EbaySearchParams): Promise<EbayItem[]>
     const response = await ebay.buy.browse.search({
       q: params.keywords,
       category_ids: params.categoryId,
-      filter: [
-        `price:[${params.minPrice || 0}..${params.maxPrice || ''}]`,
-        `condition:${params.condition || 'NEW'}`,
-      ],
+      filter: `price:[${params.minPrice || 0}..${params.maxPrice || ''}],condition:${params.condition || 'NEW'}`,
       sort: params.sortOrder || 'BestMatch',
       limit: params.limit || 50,
     });
