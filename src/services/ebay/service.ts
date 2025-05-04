@@ -35,6 +35,42 @@ export interface EbayItem {
   }[];
 }
 
+interface EbayApiItemSummary {
+  itemId: string;
+  title: string;
+  price: {
+    value: string;
+    currency: string;
+  };
+  image?: {
+    imageUrl: string;
+  };
+  condition: string;
+  itemWebUrl: string;
+  seller: {
+    username: string;
+    feedbackPercentage: string;
+    feedbackScore: number;
+  };
+  shippingOptions?: Array<{
+    shippingCost: {
+      value: string;
+      currency: string;
+    };
+  }>;
+}
+
+interface EbayApiResponse {
+  itemSummaries: EbayApiItemSummary[];
+}
+
+interface EbayApiShippingOption {
+  shippingCost: {
+    value: string;
+    currency: string;
+  };
+}
+
 export const searchItems = async (params: EbaySearchParams): Promise<EbayItem[]> => {
   try {
     const response = await ebay.buy.browse.search({
@@ -48,7 +84,7 @@ export const searchItems = async (params: EbaySearchParams): Promise<EbayItem[]>
       limit: params.limit || 50,
     });
 
-    return response.itemSummaries.map((item: any) => ({
+    return response.itemSummaries.map((item: EbayApiItemSummary) => ({
       itemId: item.itemId,
       title: item.title,
       price: {
@@ -65,7 +101,7 @@ export const searchItems = async (params: EbaySearchParams): Promise<EbayItem[]>
         feedbackPercentage: item.seller.feedbackPercentage,
         feedbackScore: item.seller.feedbackScore,
       },
-      shippingOptions: item.shippingOptions?.map((option: any) => ({
+      shippingOptions: item.shippingOptions?.map((option: EbayApiShippingOption) => ({
         shippingCost: {
           value: option.shippingCost.value,
           currency: option.shippingCost.currency,
@@ -98,7 +134,7 @@ export const getItemDetails = async (itemId: string): Promise<EbayItem> => {
         feedbackPercentage: response.seller.feedbackPercentage,
         feedbackScore: response.seller.feedbackScore,
       },
-      shippingOptions: response.shippingOptions?.map((option: any) => ({
+      shippingOptions: response.shippingOptions?.map((option: EbayApiShippingOption) => ({
         shippingCost: {
           value: option.shippingCost.value,
           currency: option.shippingCost.currency,

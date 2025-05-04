@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import Image from 'next/image';
 import { EbayItem } from '@/services/ebay/service';
 
 interface EbaySearchResultsProps {
@@ -41,9 +41,11 @@ export default function EbaySearchResults({ items, isLoading, error }: EbaySearc
         >
           <a href={item.itemWebUrl} target="_blank" rel="noopener noreferrer">
             <div className="aspect-w-16 aspect-h-9">
-              <img
+              <Image
                 src={item.image.imageUrl}
                 alt={item.title}
+                width={400}
+                height={300}
                 className="object-cover w-full h-48"
               />
             </div>

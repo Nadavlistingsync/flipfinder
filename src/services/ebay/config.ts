@@ -5,7 +5,7 @@ export const ebayConfig = {
   certId: process.env.EBAY_CERT_ID || '',
   devId: process.env.EBAY_DEV_ID || '',
   sandbox: process.env.NODE_ENV !== 'production',
-  siteId: Ebay.SITE_ID.EBAY_US,
+  siteId: 'EBAY-US' as const,
   ruName: process.env.EBAY_RU_NAME || '',
 };
 
@@ -14,6 +14,6 @@ export const ebay = new Ebay({
   clientSecret: ebayConfig.certId,
   env: ebayConfig.sandbox ? 'SANDBOX' : 'PRODUCTION',
   headers: {
-    'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
+    'X-EBAY-C-MARKETPLACE-ID': ebayConfig.siteId,
   },
 }); 

@@ -15,6 +15,14 @@ export interface Listing {
   location: string;
 }
 
+interface ScrapedItem {
+  id: string;
+  title: string;
+  price: string;
+  link: string;
+  location: string;
+}
+
 const CRAIGSLIST_LOCATIONS = [
   'newyork',
   'losangeles',
@@ -69,7 +77,7 @@ export async function getListings(searchQuery: string, minROI: number): Promise<
         
         // Get all listings
         const listings = await page.evaluate(() => {
-          const items: any[] = [];
+          const items: ScrapedItem[] = [];
           
           // Try different selectors for the new Craigslist layout
           document.querySelectorAll('.rows > .cl-static-search-result, .rows > .gallery-card').forEach((el) => {
