@@ -32,11 +32,14 @@ npm install
 
 3. Create a `.env.local` file in the root directory and add your API keys:
 ```env
-EBAY_CLIENT_ID=your_ebay_client_id
-EBAY_CLIENT_SECRET=your_ebay_client_secret
-REDDIT_CLIENT_ID=your_reddit_client_id
-REDDIT_CLIENT_SECRET=your_reddit_client_secret
-REDDIT_USER_AGENT=your_reddit_user_agent
+# eBay API Configuration
+EBAY_BEARER_TOKEN=your_ebay_bearer_token_here
+EBAY_API_KEY=your_ebay_api_key_here
+
+# Reddit API Configuration
+REDDIT_CLIENT_ID=your_reddit_client_id_here
+REDDIT_CLIENT_SECRET=your_reddit_client_secret_here
+REDDIT_USER_AGENT=your_reddit_user_agent_here
 ```
 
 4. Run the development server:
@@ -52,19 +55,36 @@ npm run dev
 
 The following API keys are required for full functionality:
 
-- **eBay**: Get your API keys from the [eBay Developer Program](https://developer.ebay.com/)
-- **Reddit**: Create an application at [Reddit Apps](https://www.reddit.com/prefs/apps)
+#### eBay API Setup
+1. Go to the [eBay Developer Program](https://developer.ebay.com/)
+2. Create a new application
+3. Get your API keys and OAuth tokens
+4. Set up the following environment variables:
+   - `EBAY_BEARER_TOKEN`: Your OAuth token for the Buy API
+   - `EBAY_API_KEY`: Your application's API key
+
+#### Reddit API Setup
+1. Go to [Reddit Apps](https://www.reddit.com/prefs/apps)
+2. Create a new application
+3. Get your client ID and secret
+4. Set up the following environment variables:
+   - `REDDIT_CLIENT_ID`: Your application's client ID
+   - `REDDIT_CLIENT_SECRET`: Your application's client secret
+   - `REDDIT_USER_AGENT`: A unique identifier for your application
 
 ### Environment Variables
 
 Create a `.env.local` file with the following variables:
 
 ```env
-EBAY_CLIENT_ID=your_ebay_client_id
-EBAY_CLIENT_SECRET=your_ebay_client_secret
-REDDIT_CLIENT_ID=your_reddit_client_id
-REDDIT_CLIENT_SECRET=your_reddit_client_secret
-REDDIT_USER_AGENT=your_reddit_user_agent
+# eBay API Configuration
+EBAY_BEARER_TOKEN=your_ebay_bearer_token_here
+EBAY_API_KEY=your_ebay_api_key_here
+
+# Reddit API Configuration
+REDDIT_CLIENT_ID=your_reddit_client_id_here
+REDDIT_CLIENT_SECRET=your_reddit_client_secret_here
+REDDIT_USER_AGENT=your_reddit_user_agent_here
 ```
 
 ## Tech Stack
