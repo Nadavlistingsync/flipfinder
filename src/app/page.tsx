@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react';
 import { mockListings } from '@/data/mockListings';
 import Filters from '@/components/Filters';
 import ListingRow from '@/components/ListingRow';
-import { Listing } from '@/types/listing';
 
 export default function Home() {
   const [filters, setFilters] = useState({
