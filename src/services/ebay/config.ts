@@ -10,10 +10,10 @@ export const ebayConfig = {
 };
 
 export const ebay = new Ebay({
-  clientID: ebayConfig.appId,
-  clientSecret: ebayConfig.certId,
-  env: ebayConfig.sandbox ? 'SANDBOX' : 'PRODUCTION',
-  headers: {
-    'X-EBAY-C-MARKETPLACE-ID': ebayConfig.siteId,
-  },
+  appId: ebayConfig.appId,
+  certId: ebayConfig.certId,
+  devId: ebayConfig.devId,
+  sandbox: ebayConfig.sandbox,
+  siteId: ebayConfig.siteId,
+  ruName: ebayConfig.ruName
 }); 
