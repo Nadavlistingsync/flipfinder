@@ -1,75 +1,102 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { mockListings } from '@/data/mockListings';
-import Filters from '@/components/Filters';
-import ListingRow from '@/components/ListingRow';
+import { useState } from 'react';
+import EbaySearchForm from '@/components/EbaySearchForm';
+import EbaySearchResults from '@/components/EbaySearchResults';
+import CraigslistSearchForm from '@/components/CraigslistSearchForm';
+import CraigslistSearchResults from '@/components/CraigslistSearchResults';
+import { EbayItem } from '@/services/ebay/service';
+import { Listing } from '@/scrapers/craigslist';
 
 export default function Home() {
-  const [filters, setFilters] = useState({
-    searchQuery: '',
-    platforms: [] as string[],
-    minROI: 0,
-  });
+  const [ebayItems, setEbayItems] = useState<EbayItem[]>([]);
+  const [craigslistItems, setCraigslistItems] = useState<Listing[]>([]);
+  const [isLoadingEbay, setIsLoadingEbay] = useState(false);
+  const [isLoadingCraigslist, setIsLoadingCraigslist] = useState(false);
+  const [errorEbay, setErrorEbay] = useState<string | null>(null);
+  const [errorCraigslist, setErrorCraigslist] = useState<string | null>(null);
 
-  const filteredListings = useMemo(() => {
-    return mockListings.filter((listing) => {
-      const matchesSearch = listing.itemName
-        .toLowerCase()
-        .includes(filters.searchQuery.toLowerCase());
-      
-      const matchesPlatform = filters.platforms.length === 0 || 
-        filters.platforms.includes(listing.platform);
-      
-      const matchesROI = listing.roi >= filters.minROI;
+  const handleEbaySearch = async (params: {
+    keywords: string;
+    minPrice?: number;
+    maxPrice?: number;
+    condition?: string;
+    sortOrder?: string;
+    limit?: number;
+  }) => {
+    setIsLoadingEbay(true);
+    setErrorEbay(null);
 
-      return matchesSearch && matchesPlatform && matchesROI;
-    });
-  }, [filters]);
+    try {
+      const response = await fetch('/api/ebay/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to search eBay items');
+      }
+
+      const data = await response.json();
+      setEbayItems(data.items);
+    } catch (err) {
+      setErrorEbay(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoadingEbay(false);
+    }
+  };
+
+  const handleCraigslistSearch = async (params: {
+    searchQuery: string;
+    minROI: number;
+  }) => {
+    setIsLoadingCraigslist(true);
+    setErrorCraigslist(null);
+
+    try {
+      const response = await fetch('/api/craigslist/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to search Craigslist items');
+      }
+
+      const data = await response.json();
+      setCraigslistItems(data.items);
+    } catch (err) {
+      setErrorCraigslist(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoadingCraigslist(false);
+    }
+  };
 
   return (
-    <main className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">FlipFinder</h1>
-          <p className="mt-2 text-lg text-gray-600">
-            Find the best resale deals across multiple marketplaces
-          </p>
-        </div>
-
-        <Filters onFilterChange={setFilters} />
-
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Item
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Platform
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Buy Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Resale Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ROI
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredListings.map((listing) => (
-                  <ListingRow key={listing.id} listing={listing} />
-                ))}
-              </tbody>
-            </table>
+    <main className="min-h-screen bg-gray-100">
+      <div className="container mx-auto py-8">
+        <h1 className="text-4xl font-bold text-center mb-8">FlipFinder</h1>
+        <p className="text-center text-gray-600 mb-8">
+          Find the best deals across multiple platforms for resale opportunities
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">eBay Deals</h2>
+            <EbaySearchForm onSearch={handleEbaySearch} isLoading={isLoadingEbay} />
+            <EbaySearchResults items={ebayItems} isLoading={isLoadingEbay} error={errorEbay} />
+          </div>
+          
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">Craigslist Deals</h2>
+            <CraigslistSearchForm onSearch={handleCraigslistSearch} isLoading={isLoadingCraigslist} />
+            <CraigslistSearchResults items={craigslistItems} isLoading={isLoadingCraigslist} error={errorCraigslist} />
           </div>
         </div>
       </div>
