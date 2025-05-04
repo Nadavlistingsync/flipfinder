@@ -1,4 +1,4 @@
-import * as Ebay from 'ebay-api';
+import Ebay from 'ebay-api';
 
 export const ebayConfig = {
   appId: process.env.EBAY_APP_ID || '',
