@@ -6,6 +6,10 @@ const nextConfig = {
   },
   trailingSlash: true,
   reactStrictMode: true,
+  // Add basePath if your app is not deployed at the root
+  // basePath: '/flipfinder',
+  // Add assetPrefix if your app is not deployed at the root
+  // assetPrefix: '/flipfinder/',
 }
 
 module.exports = nextConfig 

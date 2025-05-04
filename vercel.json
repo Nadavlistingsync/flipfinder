@@ -1,10 +1,11 @@
 {
   "rewrites": [
     {
-      "source": "/:path*",
-      "destination": "/index.html"
+      "source": "/(.*)",
+      "destination": "/"
     }
   ],
   "trailingSlash": true,
-  "cleanUrls": true
+  "cleanUrls": true,
+  "framework": "nextjs"
 } 
