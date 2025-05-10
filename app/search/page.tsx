@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -18,6 +18,9 @@ interface EbayItem {
   itemWebUrl: string;
 }
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
 export default function SearchPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,6 +28,30 @@ export default function SearchPage() {
   const [items, setItems] = useState<EbayItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const searchWithRetry = useCallback(async (searchQuery: string, retries = 0) => {
+    try {
+      const response = await fetch(`/api/ebay/search?q=${encodeURIComponent(searchQuery)}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.details || `HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setItems(data.itemSummaries || []);
+      setError(null);
+      setRetryCount(0);
+    } catch (err) {
+      if (retries < MAX_RETRIES) {
+        console.log(`Retry attempt ${retries + 1} of ${MAX_RETRIES}`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retries + 1)));
+        return searchWithRetry(searchQuery, retries + 1);
+      }
+      throw err;
+    }
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,14 +61,10 @@ export default function SearchPage() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/ebay/search?q=${encodeURIComponent(query)}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch results');
-      }
-      const data = await response.json();
-      setItems(data.itemSummaries || []);
+      await searchWithRetry(query);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'An error occurred while searching');
+      setItems([]);
     } finally {
       setIsLoading(false);
     }
@@ -57,11 +80,13 @@ export default function SearchPage() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search eBay items..."
             className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Search query"
           />
           <button
             type="submit"
             disabled={isLoading}
             className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            aria-label={isLoading ? 'Searching...' : 'Search'}
           >
             {isLoading ? 'Searching...' : 'Search'}
           </button>
@@ -69,8 +94,12 @@ export default function SearchPage() {
       </form>
 
       {error && (
-        <div className="text-center text-red-500 mb-8">
-          {error}
+        <div className="text-center text-red-500 mb-8 p-4 bg-red-50 rounded-lg">
+          <p className="font-medium">Error loading results</p>
+          <p className="text-sm mt-1">{error}</p>
+          {retryCount > 0 && (
+            <p className="text-sm mt-2">Retrying... (Attempt {retryCount} of {MAX_RETRIES})</p>
+          )}
         </div>
       )}
 
@@ -104,6 +133,7 @@ export default function SearchPage() {
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  loading="lazy"
                 />
               </div>
               <div className="p-4">
@@ -119,8 +149,8 @@ export default function SearchPage() {
           ))}
         </div>
       ) : query && !isLoading ? (
-        <div className="text-center text-gray-500">
-          No items found. Try a different search term.
+        <div className="text-center text-gray-500 p-8 bg-gray-50 rounded-lg">
+          <p>No items found. Try a different search term.</p>
         </div>
       ) : null}
     </div>
