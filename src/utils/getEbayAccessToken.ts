@@ -8,7 +8,10 @@ let cachedToken: string | null = null;
 let expires = 0;
 
 export async function getEbayAccessToken(): Promise<string> {
-  if (cachedToken && Date.now() < expires) return cachedToken;
+  if (cachedToken && Date.now() < expires) {
+    // At this point TypeScript knows cachedToken is not null
+    return cachedToken;
+  }
 
   const id  = process.env.EBAY_PROD_APP_ID!;
   const sec = process.env.EBAY_PROD_CERT_ID!;
@@ -23,10 +26,10 @@ export async function getEbayAccessToken(): Promise<string> {
     body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope',
   });
 
-  const data = await res.json();
+  const data = await res.json() as TokenResponse;
   if (!data.access_token) throw new Error('eBay auth failed');
 
   cachedToken = data.access_token;
-  expires     = Date.now() + data.expires_in * 1000 - 60_000; // renew 1 min early
-  return cachedToken;
+  expires = Date.now() + data.expires_in * 1000 - 60_000; // renew 1 min early
+  return data.access_token; // Return the new token directly instead of cachedToken
 } 
