@@ -16,6 +16,13 @@ declare module 'ebay-api' {
     postRequest: (config: EbayConfig, method: string, data: any) => Promise<any>;
   }
 
-  const Ebay: EbayApi;
+  class Ebay implements EbayApi {
+    constructor(config: EbayConfig);
+    getAuthToken(config: EbayConfig): Promise<string>;
+    getHeaders(config: EbayConfig): Record<string, string>;
+    getRequest(config: EbayConfig, method: string, data: any): Promise<any>;
+    postRequest(config: EbayConfig, method: string, data: any): Promise<any>;
+  }
+
   export default Ebay;
 } 
