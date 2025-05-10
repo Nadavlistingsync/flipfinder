@@ -34,7 +34,13 @@ export default function SearchUI() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/ebay/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch('/api/ebay/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ keywords: query.trim() }),
+      });
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
