@@ -5,7 +5,7 @@ export const ebayConfig = {
   certId: process.env.EBAY_PROD_CERT_ID || '',
   devId: process.env.EBAY_PROD_DEV_ID || '',
   sandbox: false, // Always use production in this app
-  siteId: '0' as const,
+  siteId: 0, // eBay US site ID
   ruName: process.env.EBAY_PROD_RU_NAME || '',
 };
 
