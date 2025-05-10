@@ -2,43 +2,69 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getEbayAccessToken } from '@/utils/getEbayAccessToken';
 import { createRequestLogger } from '@/utils/logger';
 
+interface SearchParams {
+  keywords: string;
+  minPrice?: number;
+  maxPrice?: number;
+  condition?: string;
+  sortOrder?: string;
+  limit?: number;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const log = createRequestLogger(req as any);
   
-  if (req.method !== 'GET') {
+  if (req.method !== 'POST') {
     log.warn('Invalid request method', { method: req.method });
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { query, page = '1' } = req.query;
+  const params = req.body as SearchParams;
 
-  if (!query || typeof query !== 'string') {
-    log.warn('Missing or invalid query parameter', { query });
-    return res.status(400).json({ error: 'Query parameter is required' });
+  if (!params.keywords) {
+    log.warn('Missing keywords parameter');
+    return res.status(400).json({ error: 'Keywords parameter is required' });
   }
 
   try {
-    log.info('Processing eBay search request', { query, page });
+    log.info('Processing eBay search request', { params });
     
-    const pageNumber = parseInt(page as string, 10);
-    if (isNaN(pageNumber) || pageNumber < 1) {
-      log.warn('Invalid page number', { page });
-      return res.status(400).json({ error: 'Invalid page number' });
+    const token = await getEbayAccessToken();
+    
+    // Build the eBay API URL with filters
+    const url = new URL('https://api.ebay.com/buy/browse/v1/item_summary/search');
+    url.searchParams.append('q', params.keywords);
+    if (params.minPrice) url.searchParams.append('filter=price:[', params.minPrice.toString());
+    if (params.maxPrice) url.searchParams.append('filter=price:..', params.maxPrice.toString());
+    if (params.condition) url.searchParams.append('filter=conditions:', params.condition);
+    if (params.sortOrder) url.searchParams.append('sort', params.sortOrder);
+    if (params.limit) url.searchParams.append('limit', params.limit.toString());
+    
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`eBay API error: ${response.statusText}`);
     }
 
-    const results = await searchEbayItems(query, pageNumber);
+    const data = await response.json();
     
     log.info('Search completed successfully', {
-      totalItems: results.total,
-      page: pageNumber
+      totalItems: data.total,
+      items: data.itemSummaries?.length || 0
     });
 
-    return res.status(200).json(results);
-  } catch (error) {
-    log.error('Search request failed', error as Error, {
-      query,
-      page
+    return res.status(200).json({
+      items: data.itemSummaries || [],
+      total: data.total || 0
     });
+  } catch (error) {
+    log.error('Search request failed', error as Error, { params });
 
     return res.status(500).json({
       error: 'Failed to fetch eBay items',
