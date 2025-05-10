@@ -1,51 +1,48 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getEbayAccessToken } from '../../../utils/getEbayAccessToken';
+import { searchEbayItems } from '@/services/ebay/service';
+import { createRequestLogger } from '@/utils/logger';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const log = createRequestLogger(req as any);
+  
   if (req.method !== 'GET') {
+    log.warn('Invalid request method', { method: req.method });
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const query = req.query.q as string;
+  const { query, page = '1' } = req.query;
 
-  if (!query) {
-    return res.status(400).json({ error: 'Query parameter "q" is required' });
+  if (!query || typeof query !== 'string') {
+    log.warn('Missing or invalid query parameter', { query });
+    return res.status(400).json({ error: 'Query parameter is required' });
   }
 
   try {
-    const accessToken = await getEbayAccessToken();
+    log.info('Processing eBay search request', { query, page });
     
-    const response = await fetch(
-      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=50`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('eBay API error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText
-      });
-      throw new Error(`eBay API error: ${response.status} ${response.statusText}`);
+    const pageNumber = parseInt(page as string, 10);
+    if (isNaN(pageNumber) || pageNumber < 1) {
+      log.warn('Invalid page number', { page });
+      return res.status(400).json({ error: 'Invalid page number' });
     }
 
-    const data = await response.json();
-    return res.status(200).json(data);
+    const results = await searchEbayItems(query, pageNumber);
+    
+    log.info('Search completed successfully', {
+      totalItems: results.total,
+      page: pageNumber
+    });
+
+    return res.status(200).json(results);
   } catch (error) {
-    console.error('Error searching eBay:', error);
-    return res.status(500).json({ 
-      error: 'Failed to search eBay',
-      details: error instanceof Error ? error.message : 'Unknown error'
+    log.error('Search request failed', error as Error, {
+      query,
+      page
+    });
+
+    return res.status(500).json({
+      error: 'Failed to fetch eBay items',
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 } 

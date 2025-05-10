@@ -22,6 +22,12 @@ const nextConfig = {
   // Add assetPrefix if your app is not deployed at the root
   // assetPrefix: '/flipfinder/',
   swcMinify: true,
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+    level: 'info',
+  },
   async headers() {
     return [
       {

@@ -1,4 +1,7 @@
 import { ebay } from './config';
+import { logger } from '@/utils/logger';
+import { getEbayAccessToken } from '@/utils/getEbayAccessToken';
+import { EbayConfig } from './config';
 
 export interface EbaySearchParams {
   keywords: string;
@@ -221,4 +224,69 @@ export const getItemDetails = async (itemId: string): Promise<EbayItem> => {
 };
 
 // Export performance metrics for monitoring
-export const getPerformanceMetrics = () => ({ ...performanceMetrics }); 
+export const getPerformanceMetrics = () => ({ ...performanceMetrics });
+
+export async function searchEbayItems(query: string, page: number = 1): Promise<EbaySearchResponse> {
+  const startTime = Date.now();
+  const log = logger;
+
+  try {
+    log.info('Starting eBay search', { query, page });
+
+    const token = await getEbayAccessToken();
+    if (!token) {
+      log.error('Failed to get eBay access token');
+      throw new Error('Failed to get eBay access token');
+    }
+
+    log.debug('Got eBay access token', { token: token.substring(0, 10) + '...' });
+
+    const response = await fetch(
+      `${EbayConfig.apiEndpoint}/buy/browse/v1/item_summary/search?q=${encodeURIComponent(
+        query
+      )}&limit=50&offset=${(page - 1) * 50}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const duration = Date.now() - startTime;
+    log.debug('eBay API response received', { 
+      status: response.status,
+      duration,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      log.error('eBay API error', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData,
+        duration
+      });
+      throw new Error(`eBay API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    log.info('eBay search completed successfully', {
+      totalItems: data.total,
+      page,
+      duration
+    });
+
+    return data;
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    log.error('eBay search failed', error as Error, {
+      query,
+      page,
+      duration
+    });
+    throw error;
+  }
+} 
