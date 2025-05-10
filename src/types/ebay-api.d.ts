@@ -5,8 +5,9 @@ declare module 'ebay-api' {
     devId: string;
     sandbox: boolean;
     siteId: number;
+    ruName: string;
     debug: boolean;
-    headers: Record<string, string>;
+    headers?: Record<string, string>;
   }
 
   interface EbayApi {
