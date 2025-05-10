@@ -74,7 +74,7 @@ export const searchItems = async (params: EbaySearchParams): Promise<EbayItem[]>
       category_ids: params.categoryId,
       filter: `price:[${params.minPrice || 0}..${params.maxPrice || ''}],condition:${params.condition || 'NEW'}`,
       sort: params.sortOrder || 'BestMatch',
-      limit: params.limit || 50,
+      limit: String(params.limit || 50),
     });
 
     return response.itemSummaries.map((item: EbayApiItemSummary) => ({
