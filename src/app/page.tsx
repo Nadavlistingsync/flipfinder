@@ -5,8 +5,9 @@ import EbaySearchForm from '@/components/EbaySearchForm';
 import EbaySearchResults from '@/components/EbaySearchResults';
 import CraigslistSearchForm from '@/components/CraigslistSearchForm';
 import CraigslistSearchResults from '@/components/CraigslistSearchResults';
-import { EbayItem } from '@/services/ebay/service';
 import { Listing } from '@/scrapers/craigslist';
+
+type EbayItem = any; // quick placeholder
 
 export default function Home() {
   const [ebayItems, setEbayItems] = useState<EbayItem[]>([]);
