@@ -1,5 +1,16 @@
 import Ebay from 'ebay-api';
 
+// Define the EbayConfig type
+export interface EbayConfig {
+  appId: string;
+  certId: string;
+  devId: string;
+  sandbox: boolean;
+  siteId: number;
+  ruName: string;
+  debug: boolean;
+}
+
 // Validate environment variables
 const validateConfig = () => {
   const requiredVars = {
@@ -21,7 +32,7 @@ const validateConfig = () => {
 // Validate configuration on startup
 validateConfig();
 
-export const ebayConfig = {
+export const ebayConfig: EbayConfig = {
   appId: process.env.EBAY_PROD_APP_ID || '',
   certId: process.env.EBAY_PROD_CERT_ID || '',
   devId: process.env.EBAY_PROD_DEV_ID || '',
