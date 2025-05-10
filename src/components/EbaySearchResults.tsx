@@ -1,5 +1,6 @@
 import Image from 'next/image';
-import { EbayItem } from '@/services/ebay/service';
+
+type EbayItem = any; // quick placeholder
 
 interface EbaySearchResultsProps {
   items: EbayItem[];
@@ -49,7 +50,7 @@ export default function EbaySearchResults({ items, isLoading, error }: EbaySearc
           <a href={item.itemWebUrl} target="_blank" rel="noopener noreferrer" className="block">
             <div className="aspect-w-16 aspect-h-9 relative">
               <Image
-                src={item.image.imageUrl || '/placeholder.png'}
+                src={item.image?.imageUrl || '/placeholder.png'}
                 alt={item.title}
                 fill
                 className="object-cover"
@@ -60,17 +61,17 @@ export default function EbaySearchResults({ items, isLoading, error }: EbaySearc
               <h3 className="text-lg font-semibold mb-2 line-clamp-2 text-white">{item.title}</h3>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-xl font-bold text-green-400">
-                  {item.price.currency} {item.price.value}
+                  {item.price?.currency || 'USD'} {item.price?.value || '0.00'}
                 </span>
                 <span className="text-sm text-gray-400">{item.condition}</span>
               </div>
               <div className="text-sm text-gray-400">
-                <p>Seller: {item.seller.username}</p>
-                <p>Feedback: {item.seller.feedbackPercentage}% ({item.seller.feedbackScore})</p>
+                <p>Seller: {item.seller?.username || 'Unknown'}</p>
+                <p>Feedback: {item.seller?.feedbackPercentage || 0}% ({item.seller?.feedbackScore || 0})</p>
               </div>
-              {item.shippingOptions.length > 0 && (
+              {item.shippingOptions?.[0] && (
                 <div className="mt-2 text-sm text-gray-400">
-                  <p>Shipping: {item.shippingOptions[0].shippingCost.currency} {item.shippingOptions[0].shippingCost.value}</p>
+                  <p>Shipping: {item.shippingOptions[0].shippingCost?.currency || 'USD'} {item.shippingOptions[0].shippingCost?.value || '0.00'}</p>
                 </div>
               )}
             </div>
