@@ -79,24 +79,42 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-100">
-      <div className="container mx-auto py-8">
-        <h1 className="text-4xl font-bold text-center mb-8">FlipFinder</h1>
-        <p className="text-center text-gray-600 mb-8">
-          Find the best deals across multiple platforms for resale opportunities
-        </p>
+    <main className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+      <div className="container mx-auto px-4 py-12">
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+            FlipFinder
+          </h1>
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            Find the best deals across multiple platforms for resale opportunities
+          </p>
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <h2 className="text-2xl font-semibold mb-4">eBay Deals</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="bg-gray-800 rounded-xl shadow-2xl p-6 border border-gray-700">
+            <h2 className="text-2xl font-bold mb-6 text-blue-400 flex items-center">
+              <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              eBay Deals
+            </h2>
             <EbaySearchForm onSearch={handleEbaySearch} isLoading={isLoadingEbay} />
-            <EbaySearchResults items={ebayItems} isLoading={isLoadingEbay} error={errorEbay} />
+            <div className="mt-6">
+              <EbaySearchResults items={ebayItems} isLoading={isLoadingEbay} error={errorEbay} />
+            </div>
           </div>
           
-          <div>
-            <h2 className="text-2xl font-semibold mb-4">Craigslist Deals</h2>
+          <div className="bg-gray-800 rounded-xl shadow-2xl p-6 border border-gray-700">
+            <h2 className="text-2xl font-bold mb-6 text-purple-400 flex items-center">
+              <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Craigslist Deals
+            </h2>
             <CraigslistSearchForm onSearch={handleCraigslistSearch} isLoading={isLoadingCraigslist} />
-            <CraigslistSearchResults items={craigslistItems} isLoading={isLoadingCraigslist} error={errorCraigslist} />
+            <div className="mt-6">
+              <CraigslistSearchResults items={craigslistItems} isLoading={isLoadingCraigslist} error={errorCraigslist} />
+            </div>
           </div>
         </div>
       </div>
