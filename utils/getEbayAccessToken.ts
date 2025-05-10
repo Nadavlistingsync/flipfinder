@@ -18,7 +18,10 @@ export async function getEbayAccessToken(): Promise<string> {
     body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope',
   });
   const data = await res.json();
-  if (!data.access_token) throw new Error('eBay auth failed');
+  if (!data.access_token) {
+    console.error('[eBay] Token fetch failed:', JSON.stringify(data));
+    throw new Error('eBay auth failed');
+  }
 
   cached  = data.access_token;
   expires = Date.now() + data.expires_in * 1000 - 60_000; // refresh 1 min early
