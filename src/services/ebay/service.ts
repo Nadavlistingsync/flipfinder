@@ -78,37 +78,7 @@ class EbayServiceError extends Error {
   }
 }
 
-// Performance monitoring
-const performanceMetrics = {
-  requests: 0,
-  errors: 0,
-  averageResponseTime: 0,
-};
-
-// Automatic feedback system
-const feedbackSystem = {
-  logError: (error: any, context: string) => {
-    console.error(`[EbayService] ${context}:`, error);
-    performanceMetrics.errors++;
-    
-    // Send error to monitoring service (implement your preferred service)
-    if (process.env.NODE_ENV === 'production') {
-      // Example: sendToMonitoringService(error, context);
-    }
-  },
-
-  logPerformance: (startTime: number) => {
-    const duration = Date.now() - startTime;
-    performanceMetrics.requests++;
-    performanceMetrics.averageResponseTime = 
-      (performanceMetrics.averageResponseTime * (performanceMetrics.requests - 1) + duration) / 
-      performanceMetrics.requests;
-  },
-};
-
 export const searchItems = async (params: EbaySearchParams): Promise<EbayItem[]> => {
-  const startTime = Date.now();
-  
   try {
     // Input validation
     if (!params.keywords?.trim()) {
@@ -133,9 +103,6 @@ export const searchItems = async (params: EbaySearchParams): Promise<EbayItem[]>
 
     // Make API request
     const response = await ebay.buy.browse.search(searchParams);
-
-    // Log performance
-    feedbackSystem.logPerformance(startTime);
 
     // Transform and validate response
     if (!response.itemSummaries) {
@@ -167,11 +134,8 @@ export const searchItems = async (params: EbaySearchParams): Promise<EbayItem[]>
       })) || [],
     }));
   } catch (error) {
-    feedbackSystem.logError(error, 'searchItems');
-    throw new EbayServiceError(
-      'Failed to search eBay items',
-      error instanceof Error ? error.message : 'Unknown error'
-    );
+    console.error('[EbayService] Search error:', error);
+    throw error;
   }
 };
 
@@ -184,7 +148,6 @@ export const getItemDetails = async (itemId: string): Promise<EbayItem> => {
     }
 
     const response = await ebay.buy.browse.getItem(itemId);
-    feedbackSystem.logPerformance(startTime);
 
     if (!response) {
       throw new EbayServiceError('Item not found');
@@ -215,7 +178,6 @@ export const getItemDetails = async (itemId: string): Promise<EbayItem> => {
       })) || [],
     };
   } catch (error) {
-    feedbackSystem.logError(error, 'getItemDetails');
     throw new EbayServiceError(
       'Failed to get eBay item details',
       error instanceof Error ? error.message : 'Unknown error'
@@ -223,11 +185,7 @@ export const getItemDetails = async (itemId: string): Promise<EbayItem> => {
   }
 };
 
-// Export performance metrics for monitoring
-export const getPerformanceMetrics = () => ({ ...performanceMetrics });
-
 export async function searchEbayItems(query: string, page: number = 1): Promise<EbaySearchResponse> {
-  const startTime = Date.now();
   const log = logger;
 
   try {
@@ -254,20 +212,12 @@ export async function searchEbayItems(query: string, page: number = 1): Promise<
       }
     );
 
-    const duration = Date.now() - startTime;
-    log.debug('eBay API response received', { 
-      status: response.status,
-      duration,
-      headers: Object.fromEntries(response.headers.entries())
-    });
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
       log.error('eBay API error', {
         status: response.status,
         statusText: response.statusText,
-        errorData,
-        duration
+        errorData
       });
       throw new Error(`eBay API error: ${response.status} ${response.statusText}`);
     }
@@ -275,17 +225,14 @@ export async function searchEbayItems(query: string, page: number = 1): Promise<
     const data = await response.json();
     log.info('eBay search completed successfully', {
       totalItems: data.total,
-      page,
-      duration
+      page
     });
 
     return data;
   } catch (error) {
-    const duration = Date.now() - startTime;
     log.error('eBay search failed', error as Error, {
       query,
-      page,
-      duration
+      page
     });
     throw error;
   }

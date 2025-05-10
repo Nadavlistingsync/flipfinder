@@ -28,30 +28,6 @@ export default function SearchPage() {
   const [items, setItems] = useState<EbayItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-
-  const searchWithRetry = useCallback(async (searchQuery: string, retries = 0) => {
-    try {
-      const response = await fetch(`/api/ebay/search?q=${encodeURIComponent(searchQuery)}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.details || `HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      setItems(data.itemSummaries || []);
-      setError(null);
-      setRetryCount(0);
-    } catch (err) {
-      if (retries < MAX_RETRIES) {
-        console.log(`Retry attempt ${retries + 1} of ${MAX_RETRIES}`);
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retries + 1)));
-        return searchWithRetry(searchQuery, retries + 1);
-      }
-      throw err;
-    }
-  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +37,16 @@ export default function SearchPage() {
     setError(null);
 
     try {
-      await searchWithRetry(query);
+      const response = await fetch(`/api/ebay/search?q=${encodeURIComponent(query)}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.details || `HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setItems(data.itemSummaries || []);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred while searching');
       setItems([]);
@@ -97,9 +82,6 @@ export default function SearchPage() {
         <div className="text-center text-red-500 mb-8 p-4 bg-red-50 rounded-lg">
           <p className="font-medium">Error loading results</p>
           <p className="text-sm mt-1">{error}</p>
-          {retryCount > 0 && (
-            <p className="text-sm mt-2">Retrying... (Attempt {retryCount} of {MAX_RETRIES})</p>
-          )}
         </div>
       )}
 
