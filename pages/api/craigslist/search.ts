@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import puppeteer from 'puppeteer-core';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
 
 export default async function handler(
   req: NextApiRequest,
@@ -18,37 +19,39 @@ export default async function handler(
   }
 
   try {
-    // Use Chrome AWS Lambda for Vercel environment
-    const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      executablePath: process.env.CHROME_EXECUTABLE_PATH || '/usr/bin/google-chrome',
-      headless: 'new'
+    const response = await axios.get(
+      `https://www.craigslist.org/search/sss?query=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+        },
+      }
+    );
+
+    const $ = cheerio.load(response.data);
+    const results = [];
+
+    $('.result-row').each((_, element) => {
+      const $element = $(element);
+      const title = $element.find('.result-title').text().trim();
+      const price = $element.find('.result-price').text().trim();
+      const link = $element.find('a').attr('href') || '';
+      const image = $element.find('img').attr('src') || '';
+
+      if (title) {
+        results.push({
+          title,
+          price,
+          link: link.startsWith('http') ? link : `https://www.craigslist.org${link}`,
+          image,
+        });
+      }
     });
 
-    const page = await browser.newPage();
-    await page.goto(`https://www.craigslist.org/search/sss?query=${encodeURIComponent(query)}`);
-    
-    // Wait for results to load
-    await page.waitForSelector('.result-row', { timeout: 5000 });
-
-    const results = await page.evaluate(() => {
-      const items = Array.from(document.querySelectorAll('.result-row'));
-      return items.map(item => {
-        const titleElement = item.querySelector('.result-title');
-        const priceElement = item.querySelector('.result-price');
-        const linkElement = item.querySelector('a');
-        const imageElement = item.querySelector('img');
-
-        return {
-          title: titleElement?.textContent?.trim() || '',
-          price: priceElement?.textContent?.trim() || '',
-          link: linkElement?.href || '',
-          image: imageElement?.src || '',
-        };
-      });
-    });
-
-    await browser.close();
     return res.status(200).json({ results });
   } catch (error) {
     console.error('Error searching Craigslist:', error);
