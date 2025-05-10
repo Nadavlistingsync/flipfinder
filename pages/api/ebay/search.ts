@@ -1,59 +1,42 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getEbayAccessToken } from '../../../src/utils/getEbayAccessToken';
+import { getEbayAccessToken } from '../../../utils/getEbayAccessToken';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET' && req.method !== 'POST') {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const query = req.query.q as string;
+  if (!query) {
+    return res.status(400).json({ error: 'Query parameter "q" is required' });
+  }
+
   try {
-    const query = req.query.q as string || req.body.query;
-    if (!query) {
-      return res.status(400).json({ error: 'Query parameter is required' });
-    }
-
-    const limit = parseInt(req.query.limit as string) || 5;
-    
-    // Log environment check
-    console.log('Environment check:', {
-      hasAppId: !!process.env.EBAY_PROD_APP_ID,
-      hasCertId: !!process.env.EBAY_PROD_CERT_ID,
-      nodeEnv: process.env.NODE_ENV
-    });
-
     const accessToken = await getEbayAccessToken();
-    console.log('Successfully obtained access token');
+    
+    const response = await fetch(
+      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=50`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
-    const headers = {
-      'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
-      'X-EBAY-C-ENDUSER-CONTEXT': 'contextualLocation=country=US',
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${accessToken}`
-    };
-
-    const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=${limit}`;
-    console.log('Making request to eBay API:', { url, headers: { ...headers, Authorization: 'Bearer [REDACTED]' } });
-
-    const ebayRes = await fetch(url, { headers });
-
-    if (!ebayRes.ok) {
-      const errorText = await ebayRes.text();
-      console.error('eBay API error response:', {
-        status: ebayRes.status,
-        statusText: ebayRes.statusText,
-        error: errorText
-      });
-      throw new Error(`eBay API error: ${ebayRes.status} ${ebayRes.statusText} - ${errorText}`);
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`eBay API error: ${error}`);
     }
 
-    const data = await ebayRes.json();
+    const data = await response.json();
     return res.status(200).json(data);
   } catch (error) {
-    console.error('Error in eBay search:', error);
-    return res.status(500).json({ 
-      error: error.message,
-      details: error.stack
-    });
+    console.error('Error searching eBay:', error);
+    return res.status(500).json({ error: 'Failed to search eBay' });
   }
 } 
