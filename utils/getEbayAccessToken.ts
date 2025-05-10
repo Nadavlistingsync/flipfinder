@@ -14,8 +14,12 @@ export async function getEbayAccessToken(): Promise<string> {
   const appId = process.env.EBAY_PROD_APP_ID;
   const certId = process.env.EBAY_PROD_CERT_ID;
 
+  // Debug logging for environment variables
+  console.log('EBAY_PROD_APP_ID:', appId ? 'set' : 'NOT SET');
+  console.log('EBAY_PROD_CERT_ID:', certId ? 'set' : 'NOT SET');
+
   if (!appId || !certId) {
-    throw new Error('Missing eBay API credentials');
+    throw new Error(`Missing eBay API credentials. EBAY_PROD_APP_ID: ${appId ? 'set' : 'NOT SET'}, EBAY_PROD_CERT_ID: ${certId ? 'set' : 'NOT SET'}`);
   }
 
   const credentials = Buffer.from(`${appId}:${certId}`).toString('base64');
