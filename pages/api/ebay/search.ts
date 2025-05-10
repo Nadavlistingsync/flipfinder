@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getEbayAccessToken } from '../../utils/getEbayAccessToken';
+import { getEbayAccessToken } from '../../../src/utils/getEbayAccessToken';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET' && req.method !== 'POST') {
