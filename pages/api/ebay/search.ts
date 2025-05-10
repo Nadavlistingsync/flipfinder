@@ -1,5 +1,5 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { searchEbayItems } from '@/services/ebay/service';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getEbayAccessToken } from '@/utils/getEbayAccessToken';
 import { createRequestLogger } from '@/utils/logger';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
