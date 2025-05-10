@@ -40,10 +40,10 @@ export async function getEbayAccessToken(): Promise<string> {
 
     const data = await response.json();
     
-    // Cache the token with expiration
+    // Cache the token with expiration (subtract 5 minutes for safety margin)
     tokenCache = {
       token: data.access_token,
-      expiresAt: Date.now() + (data.expires_in * 1000) - 60000, // Subtract 1 minute for safety
+      expiresAt: Date.now() + (data.expires_in - 300) * 1000,
     };
 
     return tokenCache.token;

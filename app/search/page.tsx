@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
-import { useDebounce } from 'use-debounce';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface EbayItem {
   itemId: string;
@@ -19,109 +19,110 @@ interface EbayItem {
 }
 
 export default function SearchPage() {
-  const [query, setQuery] = useState('macbook');
-  const [debouncedQuery] = useDebounce(query, 500);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get('q') || '');
   const [items, setItems] = useState<EbayItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function searchItems() {
-      if (!debouncedQuery) return;
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const response = await fetch(`/api/ebay/search?q=${encodeURIComponent(debouncedQuery)}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch results');
-        }
-        const data = await response.json();
-        setItems(data.itemSummaries || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-        setItems([]);
-      } finally {
-        setLoading(false);
-      }
-    }
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim()) return;
 
-    searchItems();
-  }, [debouncedQuery]);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/ebay/search?q=${encodeURIComponent(query)}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch results');
+      }
+      const data = await response.json();
+      setItems(data.itemSummaries || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">eBay Search</h1>
-          <div className="max-w-xl mx-auto">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for items..."
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+    <div className="container mx-auto px-4 py-8">
+      <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-8">
+        <div className="flex gap-4">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search eBay items..."
+            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {isLoading ? 'Searching...' : 'Search'}
+          </button>
         </div>
+      </form>
 
-        {loading && (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          </div>
-        )}
+      {error && (
+        <div className="text-center text-red-500 mb-8">
+          {error}
+        </div>
+      )}
 
-        {error && (
-          <div className="text-center py-8 text-red-600">
-            {error}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, index) => (
+            <div key={index} className="bg-gray-100 rounded-lg overflow-hidden animate-pulse">
+              <div className="aspect-w-16 aspect-h-9 bg-gray-200" />
+              <div className="p-4 space-y-3">
+                <div className="h-4 bg-gray-200 rounded w-3/4" />
+                <div className="h-4 bg-gray-200 rounded w-1/2" />
+                <div className="h-4 bg-gray-200 rounded w-1/4" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : items.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map((item) => (
             <a
               key={item.itemId}
               href={item.itemWebUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden"
+              className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
             >
-              <div className="relative h-48 w-full">
-                {item.image?.imageUrl ? (
-                  <Image
-                    src={item.image.imageUrl}
-                    alt={item.title}
-                    fill
-                    className="object-contain"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-400">No image</span>
-                  </div>
-                )}
+              <div className="aspect-w-16 aspect-h-9 relative">
+                <Image
+                  src={item.image?.imageUrl || '/placeholder.png'}
+                  alt={item.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
               </div>
               <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                  {item.title}
-                </h3>
-                <p className="text-xl font-bold text-blue-600 mb-2">
-                  {item.price.currency} {item.price.value}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Condition: {item.condition}
-                </p>
+                <h3 className="text-lg font-semibold mb-2 line-clamp-2">{item.title}</h3>
+                <div className="flex justify-between items-center">
+                  <span className="text-xl font-bold text-green-600">
+                    {item.price.currency} {item.price.value}
+                  </span>
+                  <span className="text-sm text-gray-500">{item.condition}</span>
+                </div>
               </div>
             </a>
           ))}
         </div>
-
-        {!loading && !error && items.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No items found. Try a different search term.
-          </div>
-        )}
-      </div>
+      ) : query && !isLoading ? (
+        <div className="text-center text-gray-500">
+          No items found. Try a different search term.
+        </div>
+      ) : null}
     </div>
   );
 } 
